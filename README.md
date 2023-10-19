@@ -36,3 +36,17 @@ A. Unchanged contract:
 | transfer                         | 194526          | 194526 | 194526 | 194526 | 3       |
 | whiteTransfer                    | 75937           | 77003  | 77537  | 77537  | 3       |
 | whitelist                        | 642             | 642    | 642    | 642    | 2       |
+
+## Optmisation steps:
+
+1. Refactor:
+
+`addToWhitelist`
+
+Error codes:
+
+255' = Gas Contract - addToWhitelist function - tier level should not be greater than 255
+
+911' = Contract hacked, imposible, call help
+
+Improved -26,030 gas until here.
