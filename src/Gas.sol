@@ -48,50 +48,36 @@ contract GasContract is Ownable, Constants {
     }
     uint256 wasLastOdd = 1;
     mapping(address => uint256) public isOddWhitelistUser;
-    
+
     struct ImportantStruct {
         uint256 amount;
-        uint256 valueA; // max 3 digits
-        uint256 bigValue;
-        uint256 valueB; // max 3 digits
+        // uint256 valueA; // max 3 digits
+        // uint256 bigValue;
+        // uint256 valueB; // max 3 digits
         bool paymentStatus;
-        address sender;
+        // address sender;
     }
     mapping(address => ImportantStruct) public whiteListStruct;
 
     event AddedToWhitelist(address userAddress, uint256 tier);
 
     modifier onlyAdminOrOwner() {
-        address senderOfTx = msg.sender;
-        if (checkForAdmin(senderOfTx)) {
-            require(
-                checkForAdmin(senderOfTx),
-                "Gas Contract Only Admin Check-  Caller not admin"
-            );
-            _;
-        } else if (senderOfTx == contractOwner) {
-            _;
-        } else {
-            revert(
-                "Error in Gas contract - onlyAdminOrOwner modifier : revert happened because the originator of the transaction was not the admin, and furthermore he wasn't the owner of the contract, so he cannot run this function"
-            );
-        }
+        require(
+            msg.sender == contractOwner || checkForAdmin(msg.sender),
+            "Gas Contract Only Admin Check: Caller not admin or owner"
+        );
+        _;
     }
 
     modifier checkIfWhiteListed(address sender) {
-        address senderOfTx = msg.sender;
         require(
-            senderOfTx == sender,
+            msg.sender == sender,
             "Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender"
         );
-        uint256 usersTier = whitelist[senderOfTx];
+        uint256 usersTier = whitelist[msg.sender];
         require(
-            usersTier > 0,
+            usersTier > 0 && usersTier < 4,
             "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
-        );
-        require(
-            usersTier < 4,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therfore 4 is an invalid tier for the whitlist of this contract. make sure whitlist tiers were set correctly"
         );
         _;
     }
@@ -107,20 +93,14 @@ contract GasContract is Ownable, Constants {
     event WhiteListTransfer(address indexed);
 
     constructor(address[] memory _admins, uint256 _totalSupply) {
-        contractOwner = msg.sender;
-        totalSupply = _totalSupply;
-
         for (uint256 ii = 0; ii < administrators.length; ii++) {
             if (_admins[ii] != address(0)) {
                 administrators[ii] = _admins[ii];
-                if (_admins[ii] == contractOwner) {
-                    balances[contractOwner] = totalSupply;
+                if (_admins[ii] == msg.sender) {
+                    balances[msg.sender] = _totalSupply;
+                    emit supplyChanged(_admins[ii], _totalSupply);
                 } else {
                     balances[_admins[ii]] = 0;
-                }
-                if (_admins[ii] == contractOwner) {
-                    emit supplyChanged(_admins[ii], totalSupply);
-                } else if (_admins[ii] != contractOwner) {
                     emit supplyChanged(_admins[ii], 0);
                 }
             }
@@ -160,11 +140,10 @@ contract GasContract is Ownable, Constants {
         return mode;
     }
 
-
-    function addHistory(address _updateAddress, bool _tradeMode)
-        public
-        returns (bool status_, bool tradeMode_)
-    {
+    function addHistory(
+        address _updateAddress,
+        bool _tradeMode
+    ) public returns (bool status_, bool tradeMode_) {
         History memory history;
         history.blockNumber = block.number;
         history.lastUpdate = block.timestamp;
@@ -177,11 +156,9 @@ contract GasContract is Ownable, Constants {
         return ((status[0] == true), _tradeMode);
     }
 
-    function getPayments(address _user)
-        public
-        view
-        returns (Payment[] memory payments_)
-    {
+    function getPayments(
+        address _user
+    ) public view returns (Payment[] memory payments_) {
         require(
             _user != address(0),
             "Gas Contract - getPayments function - User must have a valid non zero address"
@@ -222,73 +199,65 @@ contract GasContract is Ownable, Constants {
         return (status[0] == true);
     }
 
-    function updatePayment(
-        address _user,
-        uint256 _ID,
-        uint256 _amount,
-        PaymentType _type
+    // function updatePayment(
+    //     address _user,
+    //     uint256 _ID,
+    //     uint256 _amount,
+    //     PaymentType _type
+    // ) public onlyAdminOrOwner {
+    //     require(
+    //         _ID > 0,
+    //         "Gas Contract - Update Payment function - ID must be greater than 0"
+    //     );
+    //     require(
+    //         _amount > 0,
+    //         "Gas Contract - Update Payment function - Amount must be greater than 0"
+    //     );
+    //     require(
+    //         _user != address(0),
+    //         "Gas Contract - Update Payment function - Administrator must have a valid non zero address"
+    //     );
+
+    //     address senderOfTx = msg.sender;
+
+    //     for (uint256 ii = 0; ii < payments[_user].length; ii++) {
+    //         if (payments[_user][ii].paymentID == _ID) {
+    //             payments[_user][ii].adminUpdated = true;
+    //             payments[_user][ii].admin = _user;
+    //             payments[_user][ii].paymentType = _type;
+    //             payments[_user][ii].amount = _amount;
+    //             bool tradingMode = getTradingMode();
+    //             addHistory(_user, tradingMode);
+    //             emit PaymentUpdated(
+    //                 senderOfTx,
+    //                 _ID,
+    //                 _amount,
+    //                 payments[_user][ii].recipientName
+    //             );
+    //             break; //added! possibly improves runtime gas
+    //         }
+    //     }
+    // }
+
+    function addToWhitelist(
+        address _userAddrs,
+        uint256 _tier
     ) public onlyAdminOrOwner {
-        require(
-            _ID > 0,
-            "Gas Contract - Update Payment function - ID must be greater than 0"
-        );
-        require(
-            _amount > 0,
-            "Gas Contract - Update Payment function - Amount must be greater than 0"
-        );
-        require(
-            _user != address(0),
-            "Gas Contract - Update Payment function - Administrator must have a valid non zero address"
-        );
-
-        address senderOfTx = msg.sender;
-
-        for (uint256 ii = 0; ii < payments[_user].length; ii++) {
-            if (payments[_user][ii].paymentID == _ID) {
-                payments[_user][ii].adminUpdated = true;
-                payments[_user][ii].admin = _user;
-                payments[_user][ii].paymentType = _type;
-                payments[_user][ii].amount = _amount;
-                bool tradingMode = getTradingMode();
-                addHistory(_user, tradingMode);
-                emit PaymentUpdated(
-                    senderOfTx,
-                    _ID,
-                    _amount,
-                    payments[_user][ii].recipientName
-                );
-            }
-        }
-    }
-
-    function addToWhitelist(address _userAddrs, uint256 _tier)
-        public
-        onlyAdminOrOwner
-    {
         require(
             _tier < 255,
             "Gas Contract - addToWhitelist function -  tier level should not be greater than 255"
         );
         whitelist[_userAddrs] = _tier;
         if (_tier > 3) {
-            whitelist[_userAddrs] -= _tier;
             whitelist[_userAddrs] = 3;
-        } else if (_tier == 1) {
-            whitelist[_userAddrs] -= _tier;
-            whitelist[_userAddrs] = 1;
-        } else if (_tier > 0 && _tier < 3) {
-            whitelist[_userAddrs] -= _tier;
-            whitelist[_userAddrs] = 2;
         }
         uint256 wasLastAddedOdd = wasLastOdd;
-        if (wasLastAddedOdd == 1) {
+        if (wasLastOdd == 1) {
             wasLastOdd = 0;
-            isOddWhitelistUser[_userAddrs] = wasLastAddedOdd;
-        } else if (wasLastAddedOdd == 0) {
-            wasLastOdd = 1;
-            isOddWhitelistUser[_userAddrs] = wasLastAddedOdd;
+            isOddWhitelistUser[_userAddrs] = 1;
         } else {
-            revert("Contract hacked, imposible, call help");
+            wasLastOdd = 1;
+            isOddWhitelistUser[_userAddrs] = 0;
         }
         emit AddedToWhitelist(_userAddrs, _tier);
     }
@@ -298,8 +267,15 @@ contract GasContract is Ownable, Constants {
         uint256 _amount
     ) public checkIfWhiteListed(msg.sender) {
         address senderOfTx = msg.sender;
-        whiteListStruct[senderOfTx] = ImportantStruct(_amount, 0, 0, 0, true, msg.sender);
-        
+        whiteListStruct[senderOfTx] = ImportantStruct(
+            _amount,
+            // 0,
+            // 0,
+            // 0,
+            true
+            // msg.sender
+        );
+
         require(
             balances[senderOfTx] >= _amount,
             "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
@@ -308,25 +284,28 @@ contract GasContract is Ownable, Constants {
             _amount > 3,
             "Gas Contract - whiteTransfers function - amount to send have to be bigger than 3"
         );
+
+        //consider grouping operations and also import libraries for overflow and underflow.
         balances[senderOfTx] -= _amount;
         balances[_recipient] += _amount;
         balances[senderOfTx] += whitelist[senderOfTx];
         balances[_recipient] -= whitelist[senderOfTx];
-        
+
         emit WhiteListTransfer(_recipient);
     }
 
-
-    function getPaymentStatus(address sender) public returns (bool, uint256) {        
-        return (whiteListStruct[sender].paymentStatus, whiteListStruct[sender].amount);
+    function getPaymentStatus(address sender) public returns (bool, uint256) {
+        return (
+            whiteListStruct[sender].paymentStatus,
+            whiteListStruct[sender].amount
+        );
     }
 
     receive() external payable {
         payable(msg.sender).transfer(msg.value);
     }
 
-
     fallback() external payable {
-         payable(msg.sender).transfer(msg.value);
+        payable(msg.sender).transfer(msg.value);
     }
 }
