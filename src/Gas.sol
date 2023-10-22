@@ -11,31 +11,11 @@ contract Constants {
 
 contract GasContract is Ownable, Constants {
     uint256 public totalSupply = 0; // cannot be updated
-    uint256 public paymentCounter = 0;
     mapping(address => uint256) public balances;
     uint256 public tradeMode = 0;
-    mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
     address[5] public administrators;
     bool public isReady = false;
-    enum PaymentType {
-        Unknown,
-        BasicPayment,
-        Refund,
-        Dividend,
-        GroupPayment
-    }
-    PaymentType constant defaultPayment = PaymentType.Unknown;
-
-    struct Payment {
-        PaymentType paymentType;
-        uint256 paymentID;
-        bool adminUpdated;
-        string recipientName; // max 8 characters
-        address recipient;
-        address admin; // administrators address
-        uint256 amount;
-    }
 
     struct ImportantStruct {
         uint256 amount;
@@ -77,12 +57,13 @@ contract GasContract is Ownable, Constants {
     event WhiteListTransfer(address indexed);
 
     constructor(address[] memory _admins, uint256 _totalSupply) {
-        for (uint256 ii = 0; ii < administrators.length; ii++) {
-            if (_admins[ii] != address(0)) {
-                administrators[ii] = _admins[ii];
-                if (_admins[ii] == msg.sender) {
+        for (uint256 ii = 0; ii < 5; ii++) {
+            address adminAdd = _admins[ii];
+            if (adminAdd != address(0)) {
+                administrators[ii] = adminAdd;
+                if (adminAdd == msg.sender) {
                     balances[msg.sender] = _totalSupply;
-                    emit supplyChanged(_admins[ii], _totalSupply);
+                    emit supplyChanged(adminAdd, _totalSupply);
                 }
             }
         }
@@ -113,16 +94,6 @@ contract GasContract is Ownable, Constants {
         return mode;
     }
 
-    function getPayments(
-        address _user
-    ) public view returns (Payment[] memory payments_) {
-        require(
-            _user != address(0),
-            "Gas Contract - getPayments function - User must have a valid non zero address"
-        );
-        return payments[_user];
-    }
-
     function transfer(
         address _recipient,
         uint256 _amount,
@@ -140,15 +111,6 @@ contract GasContract is Ownable, Constants {
         balances[senderOfTx] -= _amount;
         balances[_recipient] += _amount;
         emit Transfer(_recipient, _amount);
-        Payment memory payment;
-        payment.admin = address(0);
-        payment.adminUpdated = false;
-        payment.paymentType = PaymentType.BasicPayment;
-        payment.recipient = _recipient;
-        payment.amount = _amount;
-        payment.recipientName = _name;
-        payment.paymentID = ++paymentCounter;
-        payments[senderOfTx].push(payment);
     }
 
     function addToWhitelist(
