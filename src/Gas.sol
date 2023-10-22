@@ -13,8 +13,6 @@ contract GasContract is Ownable, Constants {
     uint256 public totalSupply = 0; // cannot be updated
     uint256 public paymentCounter = 0;
     mapping(address => uint256) public balances;
-    uint256 public tradePercent = 12;
-    address public contractOwner;
     uint256 public tradeMode = 0;
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
@@ -29,8 +27,6 @@ contract GasContract is Ownable, Constants {
     }
     PaymentType constant defaultPayment = PaymentType.Unknown;
 
-    History[] public paymentHistory; // when a payment was updated
-
     struct Payment {
         PaymentType paymentType;
         uint256 paymentID;
@@ -41,21 +37,9 @@ contract GasContract is Ownable, Constants {
         uint256 amount;
     }
 
-    struct History {
-        uint256 lastUpdate;
-        address updatedBy;
-        uint256 blockNumber;
-    }
-    uint256 wasLastOdd = 1;
-    mapping(address => uint256) public isOddWhitelistUser;
-
     struct ImportantStruct {
         uint256 amount;
-        // uint256 valueA; // max 3 digits
-        // uint256 bigValue;
-        // uint256 valueB; // max 3 digits
         bool paymentStatus;
-        // address sender;
     }
     mapping(address => ImportantStruct) public whiteListStruct;
 
@@ -63,7 +47,7 @@ contract GasContract is Ownable, Constants {
 
     modifier onlyAdminOrOwner() {
         require(
-            msg.sender == contractOwner || checkForAdmin(msg.sender),
+            checkForAdmin(msg.sender),
             "Gas Contract Only Admin Check: Caller not admin or owner"
         );
         _;
@@ -99,20 +83,9 @@ contract GasContract is Ownable, Constants {
                 if (_admins[ii] == msg.sender) {
                     balances[msg.sender] = _totalSupply;
                     emit supplyChanged(_admins[ii], _totalSupply);
-                } else {
-                    balances[_admins[ii]] = 0;
-                    emit supplyChanged(_admins[ii], 0);
                 }
             }
         }
-    }
-
-    function getPaymentHistory()
-        public
-        payable
-        returns (History[] memory paymentHistory_)
-    {
-        return paymentHistory;
     }
 
     function checkForAdmin(address _user) public view returns (bool admin_) {
@@ -140,22 +113,6 @@ contract GasContract is Ownable, Constants {
         return mode;
     }
 
-    function addHistory(
-        address _updateAddress,
-        bool _tradeMode
-    ) public returns (bool status_, bool tradeMode_) {
-        History memory history;
-        history.blockNumber = block.number;
-        history.lastUpdate = block.timestamp;
-        history.updatedBy = _updateAddress;
-        paymentHistory.push(history);
-        bool[] memory status = new bool[](tradePercent);
-        for (uint256 i = 0; i < tradePercent; i++) {
-            status[i] = true;
-        }
-        return ((status[0] == true), _tradeMode);
-    }
-
     function getPayments(
         address _user
     ) public view returns (Payment[] memory payments_) {
@@ -170,7 +127,7 @@ contract GasContract is Ownable, Constants {
         address _recipient,
         uint256 _amount,
         string calldata _name
-    ) public returns (bool status_) {
+    ) public {
         address senderOfTx = msg.sender;
         require(
             balances[senderOfTx] >= _amount,
@@ -192,52 +149,7 @@ contract GasContract is Ownable, Constants {
         payment.recipientName = _name;
         payment.paymentID = ++paymentCounter;
         payments[senderOfTx].push(payment);
-        bool[] memory status = new bool[](tradePercent);
-        for (uint256 i = 0; i < tradePercent; i++) {
-            status[i] = true;
-        }
-        return (status[0] == true);
     }
-
-    // function updatePayment(
-    //     address _user,
-    //     uint256 _ID,
-    //     uint256 _amount,
-    //     PaymentType _type
-    // ) public onlyAdminOrOwner {
-    //     require(
-    //         _ID > 0,
-    //         "Gas Contract - Update Payment function - ID must be greater than 0"
-    //     );
-    //     require(
-    //         _amount > 0,
-    //         "Gas Contract - Update Payment function - Amount must be greater than 0"
-    //     );
-    //     require(
-    //         _user != address(0),
-    //         "Gas Contract - Update Payment function - Administrator must have a valid non zero address"
-    //     );
-
-    //     address senderOfTx = msg.sender;
-
-    //     for (uint256 ii = 0; ii < payments[_user].length; ii++) {
-    //         if (payments[_user][ii].paymentID == _ID) {
-    //             payments[_user][ii].adminUpdated = true;
-    //             payments[_user][ii].admin = _user;
-    //             payments[_user][ii].paymentType = _type;
-    //             payments[_user][ii].amount = _amount;
-    //             bool tradingMode = getTradingMode();
-    //             addHistory(_user, tradingMode);
-    //             emit PaymentUpdated(
-    //                 senderOfTx,
-    //                 _ID,
-    //                 _amount,
-    //                 payments[_user][ii].recipientName
-    //             );
-    //             break; //added! possibly improves runtime gas
-    //         }
-    //     }
-    // }
 
     function addToWhitelist(
         address _userAddrs,
@@ -251,14 +163,6 @@ contract GasContract is Ownable, Constants {
         if (_tier > 3) {
             whitelist[_userAddrs] = 3;
         }
-        uint256 wasLastAddedOdd = wasLastOdd;
-        if (wasLastOdd == 1) {
-            wasLastOdd = 0;
-            isOddWhitelistUser[_userAddrs] = 1;
-        } else {
-            wasLastOdd = 1;
-            isOddWhitelistUser[_userAddrs] = 0;
-        }
         emit AddedToWhitelist(_userAddrs, _tier);
     }
 
@@ -266,46 +170,30 @@ contract GasContract is Ownable, Constants {
         address _recipient,
         uint256 _amount
     ) public checkIfWhiteListed(msg.sender) {
-        address senderOfTx = msg.sender;
-        whiteListStruct[senderOfTx] = ImportantStruct(
-            _amount,
-            // 0,
-            // 0,
-            // 0,
-            true
-            // msg.sender
-        );
-
         require(
-            balances[senderOfTx] >= _amount,
+            balances[msg.sender] >= _amount,
             "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
         );
         require(
             _amount > 3,
             "Gas Contract - whiteTransfers function - amount to send have to be bigger than 3"
         );
-
+        whiteListStruct[msg.sender] = ImportantStruct(_amount, true);
         //consider grouping operations and also import libraries for overflow and underflow.
-        balances[senderOfTx] -= _amount;
+        balances[msg.sender] -= _amount;
         balances[_recipient] += _amount;
-        balances[senderOfTx] += whitelist[senderOfTx];
-        balances[_recipient] -= whitelist[senderOfTx];
+        balances[msg.sender] += whitelist[msg.sender];
+        balances[_recipient] -= whitelist[msg.sender];
 
         emit WhiteListTransfer(_recipient);
     }
 
-    function getPaymentStatus(address sender) public returns (bool, uint256) {
+    function getPaymentStatus(
+        address sender
+    ) public view returns (bool, uint256) {
         return (
             whiteListStruct[sender].paymentStatus,
             whiteListStruct[sender].amount
         );
-    }
-
-    receive() external payable {
-        payable(msg.sender).transfer(msg.value);
-    }
-
-    fallback() external payable {
-        payable(msg.sender).transfer(msg.value);
     }
 }
