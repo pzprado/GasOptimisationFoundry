@@ -66,3 +66,17 @@ Improved -26,030 gas until here.
 17' = Gas Contract - whiteTransfers function - amount to send have to be bigger than 3
 
 Improved -124,346 on the block above, total -150,376 gas until here.
+
+21' = Gas Contract Only Admin Check- Caller not admin
+
+22' = Error in Gas contract - onlyAdminOrOwner modifier : revert happened because the originator of the transaction was not the admin, and furthermore he wasn't the owner of the contract, so he cannot run this function
+
+23' = Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender
+
+24' = Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted
+
+25' = Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therfore 4 is an invalid tier for the whitlist of this contract. make sure whitlist tiers were set correctly
+
+26' = Gas Contract - getPayments function - User must have a valid non zero address
+
+Improved -160,180 on the block above, total -310,556 gas until here.

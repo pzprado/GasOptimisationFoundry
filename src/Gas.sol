@@ -64,35 +64,21 @@ contract GasContract is Ownable, Constants {
     modifier onlyAdminOrOwner() {
         address senderOfTx = msg.sender;
         if (checkForAdmin(senderOfTx)) {
-            require(
-                checkForAdmin(senderOfTx),
-                "Gas Contract Only Admin Check-  Caller not admin"
-            );
+            require(checkForAdmin(senderOfTx), "21'");
             _;
         } else if (senderOfTx == contractOwner) {
             _;
         } else {
-            revert(
-                "Error in Gas contract - onlyAdminOrOwner modifier : revert happened because the originator of the transaction was not the admin, and furthermore he wasn't the owner of the contract, so he cannot run this function"
-            );
+            revert("22'");
         }
     }
 
     modifier checkIfWhiteListed(address sender) {
         address senderOfTx = msg.sender;
-        require(
-            senderOfTx == sender,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender"
-        );
+        require(senderOfTx == sender, "23'");
         uint256 usersTier = whitelist[senderOfTx];
-        require(
-            usersTier > 0,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
-        );
-        require(
-            usersTier < 4,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therfore 4 is an invalid tier for the whitlist of this contract. make sure whitlist tiers were set correctly"
-        );
+        require(usersTier > 0, "24'");
+        require(usersTier < 4, "25'");
         _;
     }
 
@@ -179,10 +165,7 @@ contract GasContract is Ownable, Constants {
     function getPayments(
         address _user
     ) public view returns (Payment[] memory payments_) {
-        require(
-            _user != address(0),
-            "Gas Contract - getPayments function - User must have a valid non zero address"
-        );
+        require(_user != address(0), "26'");
         return payments[_user];
     }
 
