@@ -112,7 +112,6 @@ contract GasContract is Ownable {
                 revert(returndatasize(), returndatasize())
             }
         }
-        require(_tier < 255, "6");
         whitelist[_userAddrs] = _tier;
         if (_tier > 3) {
             whitelist[_userAddrs] = 3;
