@@ -50,3 +50,19 @@ Error codes:
 911' = Contract hacked, imposible, call help
 
 Improved -26,030 gas until here.
+
+11' = Gas Contract - Transfer function - Sender has insufficient Balance
+
+12' = Gas Contract - Transfer function - The recipient name is too long, there is a max length of 8 characters
+
+13' = Gas Contract - Transfer function - The recipient name is too long, there is a max length of 8 characters
+
+14' = Gas Contract - Update Payment function - Amount must be greater than 0
+
+15' = Gas Contract - Update Payment function - Administrator must have a valid non zero address
+
+16' = Gas Contract - whiteTransfers function - Sender has insufficient Balance
+
+17' = Gas Contract - whiteTransfers function - amount to send have to be bigger than 3
+
+Improved -124,346 on the block above, total -150,376 gas until here.

@@ -192,14 +192,8 @@ contract GasContract is Ownable, Constants {
         string calldata _name
     ) public returns (bool status_) {
         address senderOfTx = msg.sender;
-        require(
-            balances[senderOfTx] >= _amount,
-            "Gas Contract - Transfer function - Sender has insufficient Balance"
-        );
-        require(
-            bytes(_name).length < 9,
-            "Gas Contract - Transfer function -  The recipient name is too long, there is a max length of 8 characters"
-        );
+        require(balances[senderOfTx] >= _amount, "11'");
+        require(bytes(_name).length < 9, "12'");
         balances[senderOfTx] -= _amount;
         balances[_recipient] += _amount;
         emit Transfer(_recipient, _amount);
@@ -225,18 +219,9 @@ contract GasContract is Ownable, Constants {
         uint256 _amount,
         PaymentType _type
     ) public onlyAdminOrOwner {
-        require(
-            _ID > 0,
-            "Gas Contract - Update Payment function - ID must be greater than 0"
-        );
-        require(
-            _amount > 0,
-            "Gas Contract - Update Payment function - Amount must be greater than 0"
-        );
-        require(
-            _user != address(0),
-            "Gas Contract - Update Payment function - Administrator must have a valid non zero address"
-        );
+        require(_ID > 0, "13'");
+        require(_amount > 0, "14'");
+        require(_user != address(0), "15'");
 
         address senderOfTx = msg.sender;
 
@@ -301,14 +286,8 @@ contract GasContract is Ownable, Constants {
             msg.sender
         );
 
-        require(
-            balances[senderOfTx] >= _amount,
-            "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
-        );
-        require(
-            _amount > 3,
-            "Gas Contract - whiteTransfers function - amount to send have to be bigger than 3"
-        );
+        require(balances[senderOfTx] >= _amount, "16'");
+        require(_amount > 3, "17'");
         balances[senderOfTx] -= _amount;
         balances[_recipient] += _amount;
         balances[senderOfTx] += whitelist[senderOfTx];
