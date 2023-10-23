@@ -36,3 +36,14 @@ A. Unchanged contract:
 | transfer                         | 194526          | 194526 | 194526 | 194526 | 3       |
 | whiteTransfer                    | 75937           | 77003  | 77537  | 77537  | 3       |
 | whitelist                        | 642             | 642    | 642    | 642    | 2       |
+
+
+# Codes
+
+1 - Gas Contract Only Admin Check: Caller not admin or owner
+2 - Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender
+3 - Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted
+4 - Gas Contract - Transfer function - Sender has insufficient Balance
+5 - Gas Contract - Transfer function -  The recipient name is too long, there is a max length of 8 characters
+6 - Gas Contract - addToWhitelist function -  tier level should not be greater than 255
+7 - Gas Contract - whiteTransfers function - Sender has insufficient Balance

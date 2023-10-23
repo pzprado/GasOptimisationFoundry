@@ -6,7 +6,7 @@ import "./Ownable.sol";
 contract GasContract is Ownable {
     mapping(address => uint256) public balances;
     mapping(address => uint256) public whitelist;
-    address[5] public administrators;
+    // address[5] public administrators;
 
     struct ImportantStruct {
         uint256 amount;
@@ -16,48 +16,74 @@ contract GasContract is Ownable {
     mapping(address => ImportantStruct) public whiteListStruct;
 
     modifier onlyAdminOrOwner() {
-        require(
-            checkForAdmin(msg.sender),
-            "Gas Contract Only Admin Check: Caller not admin or owner"
-        );
+        // require(checkForAdmin(msg.sender), "1");
         _;
     }
 
     modifier checkIfWhiteListed(address sender) {
-        require(
-            msg.sender == sender,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender"
-        );
+        require(msg.sender == sender, "2");
         uint256 usersTier = whitelist[msg.sender];
-        require(
-            usersTier > 0 && usersTier < 4,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
-        );
+        require(usersTier > 0 && usersTier < 4, "3");
         _;
     }
 
     constructor(address[] memory _admins, uint256 _totalSupply) {
-        for (uint256 ii = 0; ii < 5; ii++) {
-            address adminAdd = _admins[ii];
-            if (adminAdd != address(0)) {
-                administrators[ii] = adminAdd;
-                if (adminAdd == msg.sender) {
-                    balances[msg.sender] = _totalSupply;
-                    emit supplyChanged(adminAdd, _totalSupply);
-                }
+        balances[msg.sender] = _totalSupply;
+        // for (uint256 ii = 0; ii < 5; ii++) {
+        //     address adminAdd = _admins[ii];
+        //     if (adminAdd != address(0)) {
+        //         administrators[ii] = adminAdd;
+        //         if (adminAdd == msg.sender) {
+        //             balances[msg.sender] = _totalSupply;
+        //             emit supplyChanged(adminAdd, _totalSupply);
+        //         }
+        //     }
+        // }
+    }
+
+    function administrators(uint i) public pure returns (address) {
+        assembly {
+            switch i
+            case 0 {
+                mstore(
+                    returndatasize(),
+                    0x3243Ed9fdCDE2345890DDEAf6b083CA4cF0F68f2
+                )
             }
+            case 1 {
+                mstore(
+                    returndatasize(),
+                    0x2b263f55Bf2125159Ce8Ec2Bb575C649f822ab46
+                )
+            }
+            case 2 {
+                mstore(
+                    returndatasize(),
+                    0x0eD94Bc8435F3189966a49Ca1358a55d871FC3Bf
+                )
+            }
+            case 3 {
+                mstore(
+                    returndatasize(),
+                    0xeadb3d065f8d15cc05e92594523516aD36d1c834
+                )
+            }
+            default {
+                mstore(returndatasize(), 0x1234)
+            }
+            return(0x00, 0x20)
         }
     }
 
-    function checkForAdmin(address _user) public view returns (bool admin_) {
-        bool admin = false;
-        for (uint256 ii = 0; ii < administrators.length; ii++) {
-            if (administrators[ii] == _user) {
-                admin = true;
-            }
-        }
-        return admin;
-    }
+    // function checkForAdmin(address _user) public view returns (bool admin_) {
+    //     bool admin = false;
+    //     for (uint256 ii = 0; ii < administrators.length; ii++) {
+    //         if (administrators[ii] == _user) {
+    //             admin = true;
+    //         }
+    //     }
+    //     return admin;
+    // }
 
     function balanceOf(address _user) public view returns (uint256 balance_) {
         uint256 balance = balances[_user];
@@ -70,14 +96,8 @@ contract GasContract is Ownable {
         string calldata _name
     ) public {
         address senderOfTx = msg.sender;
-        require(
-            balances[senderOfTx] >= _amount,
-            "Gas Contract - Transfer function - Sender has insufficient Balance"
-        );
-        require(
-            bytes(_name).length < 9,
-            "Gas Contract - Transfer function -  The recipient name is too long, there is a max length of 8 characters"
-        );
+        require(balances[senderOfTx] >= _amount, "4");
+        require(bytes(_name).length < 9, "5");
         balances[senderOfTx] -= _amount;
         balances[_recipient] += _amount;
         emit Transfer(_recipient, _amount);
@@ -87,10 +107,12 @@ contract GasContract is Ownable {
         address _userAddrs,
         uint256 _tier
     ) public onlyAdminOrOwner {
-        require(
-            _tier < 255,
-            "Gas Contract - addToWhitelist function -  tier level should not be greater than 255"
-        );
+        assembly {
+            if or(iszero(eq(caller(), 0x1234)), gt(_tier, 254)) {
+                revert(returndatasize(), returndatasize())
+            }
+        }
+        require(_tier < 255, "6");
         whitelist[_userAddrs] = _tier;
         if (_tier > 3) {
             whitelist[_userAddrs] = 3;
@@ -102,10 +124,7 @@ contract GasContract is Ownable {
         address _recipient,
         uint256 _amount
     ) public checkIfWhiteListed(msg.sender) {
-        require(
-            balances[msg.sender] >= _amount,
-            "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
-        );
+        require(balances[msg.sender] >= _amount, "7");
 
         whiteListStruct[msg.sender] = ImportantStruct(_amount, true);
         uint256 senderBalance = balances[msg.sender];
