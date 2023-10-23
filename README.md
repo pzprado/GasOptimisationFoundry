@@ -41,8 +41,6 @@ A. Unchanged contract:
 
 1. Refactor:
 
-`addToWhitelist`
-
 Error codes:
 
 255' = Gas Contract - addToWhitelist function - tier level should not be greater than 255
@@ -80,3 +78,13 @@ Improved -124,346 on the block above, total -150,376 gas until here.
 26' = Gas Contract - getPayments function - User must have a valid non zero address
 
 Improved -160,180 on the block above, total -310,556 gas until here.
+
+2. Variables
+
+a. Remove address senderOfTx variable from functions and just use msg.sender [-13,214, to current gas of 2,217,675]
+
+3. Remove functions and modifiers:
+
+a. Remove checkForAdmin and the modifier onlyAdminOrOwner [current gas 1,994,634]
+
+b. Remove modifier checkIfWhiteListed and corresponding use in functions [current gas 1,950,985]
