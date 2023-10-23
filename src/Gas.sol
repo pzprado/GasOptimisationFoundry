@@ -3,7 +3,7 @@ pragma solidity 0.8.0;
 
 import "./Ownable.sol";
 
-contract GasContract is Ownable {
+contract GasContract {
     mapping(address => uint256) public balances;
     mapping(address => uint256) public whitelist;
     // address[5] public administrators;
